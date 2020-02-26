@@ -27,8 +27,11 @@ const projectId = 'repushti-d04b3';
 
 // sesion id with random no generation is to be handled...
 
+r = Math.random(100000000,11100000000)
+d = r*10000
+sessionnum = Math.floor(d)
 
-const sessionId = "weffwsgegbsf";
+const sessionId = "RAJ"+sessionnum;
 // queries: A set of sequential queries to be send to Dialogflow agent for Intent Detection
 
 
@@ -254,8 +257,8 @@ io.sockets.on('connection', function (socket) {
 						console.log(queries)
 
 						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
-							console.log(res)
-							io.to(usr_socket).emit('res_chat', res);
+						console.log(res)
+						io.to(usr_socket).emit('res_chat', res);
 					} else if (intentResponse.queryResult.fulfillmentText == "Select any one from here!!") {
 
 						//http req is to be sended here
@@ -263,7 +266,7 @@ io.sockets.on('connection', function (socket) {
 						//httpGet()
 
 						data_response = httpGet();
-						data_response.then(function(result) {
+						data_response.then(function (result) {
 							console.log(result);
 
 							intentResponse.queryResult.listCities = result;
@@ -273,22 +276,22 @@ io.sockets.on('connection', function (socket) {
 							console.log(res)
 							io.to(usr_socket).emit('res_chat', res);
 							//
-						}, function(err) {
+						}, function (err) {
 							console.log("err:", err);
 							//
 						});
 
 						// console.log("prinitng the list");
 						// console.log(list)
-						
+
 					}
 					else {
 						console.log()
 						itsThere = false
 
 						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
-							console.log(res)
-							io.to(usr_socket).emit('res_chat', res);
+						console.log(res)
+						io.to(usr_socket).emit('res_chat', res);
 					}
 
 					// console.log(intentResponse.queryResult)
@@ -305,10 +308,10 @@ io.sockets.on('connection', function (socket) {
 					//base64output = intentResponse.outputAudio
 
 					//sending to the app almost
-					
 
 
-					
+
+
 
 
 
@@ -319,34 +322,17 @@ io.sockets.on('connection', function (socket) {
 
 
 			async function httpGet() {
-				return new Promise(function(resolve, reject) {
+				return new Promise(function (resolve, reject) {
 					var jsonParsed;
 					const request = require('request');
 					request(link, function (error, response, body) {
 						console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
 						jsonParsed = JSON.parse(body);
-						// for (let i = 0; i < jsonParsed.length; i++) {
-						// 	list.push({
-						// 		"city": jsonParsed[i].City_Name,
-						// 		"country": jsonParsed[i].City_Name
-						// 	})
-						// }
 						list = jsonParsed
 						resolve(list)
-						// console.log(jsonParsed)
-
 					}
-
 					);
-					//console.log("jsonparsed data")
-					//console.log(list)
-					
-					
 				})
-
-				
-
-				
 			}
 
 			var list = ["raj"];
