@@ -27,11 +27,11 @@ const projectId = 'repushti-d04b3';
 
 // sesion id with random no generation is to be handled...
 
-r = Math.random(100000000,11100000000)
-d = r*10000
+r = Math.random(100000000, 11100000000)
+d = r * 10000
 sessionnum = Math.floor(d)
 
-const sessionId = "RAJ"+sessionnum;
+const sessionId = "RAJ" + sessionnum;
 // queries: A set of sequential queries to be send to Dialogflow agent for Intent Detection
 
 
@@ -218,7 +218,7 @@ io.sockets.on('connection', function (socket) {
 
 			const responses = await sessionClient.detectIntent(request);
 			// responses[0].queryResult.fulfillmentText = "Tell what location that you are changing"
-			console.log(responses[0].queryResult.parameters.fields.location);
+			// console.log(responses[0].queryResult.parameters.fields.location);
 			return responses[0];
 		}
 
@@ -233,7 +233,7 @@ io.sockets.on('connection', function (socket) {
 					console.log(`Sending Query: ${query}`);
 					link = 'https://sandbox.app.repushti.com/search-city-country/' + String(query)
 					console.log(link)
-					itsThere == true ? changed = "Select any one location from here!!" : console.log("")
+					// itsThere == true ? changed = "Select any one location from here!!" : console.log("")
 					intentResponse = await detectIntent(
 						projectId,
 						sessionId,
@@ -247,52 +247,58 @@ io.sockets.on('connection', function (socket) {
 
 					// console.log(intentResponse.queryResult.parameters)
 
-					itsThere == true ? intentResponse.queryResult.fulfillmentText = "Select any one from here!!" : console.log("")
-					intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+					//removing need to add as testing for we dont have anuyhotels in this location
+					// itsThere == true ? intentResponse.queryResult.fulfillmentText = "Select any one from here!!" : console.log("")
+					// intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
 
 
 					if (findreturn(intentResponse.queryResult.fulfillmentText, "location") == "location") {
-						itsThere = true
-						console.log(itsThere)
-						console.log(queries)
+						if (itsThere == true) {
+							data_response = httpGet();
+							data_response.then(function (result) {
+								console.log("this is the result"+String(result));
+								if (String(result) == "") {
+									//querry will be checked with the list of cities if we dont hav the hotel in the city we will ask user to inout a new city
+									console.log("We dont have any hotels at this location !! Please Provide another location !!")
+									intentResponse.queryResult.fulfillmentText = "We dont have any hotels at this location !! Please Provide another location !!"
+								} else {
+									//we have the hotel in the city and we will just confirm the localtion properly as we can have same name of cities worldwide
+									intentResponse.queryResult.fulfillmentText = "Select any one from here!!"
+									intentResponse.queryResult.listCities = result;
+									itsThere = false;
+								}
+								intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
 
-						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
-						console.log(res)
-						io.to(usr_socket).emit('res_chat', res);
-					} else if (intentResponse.queryResult.fulfillmentText == "Select any one from here!!") {
-
-						//http req is to be sended here
-						// list = httpGet()
-						//httpGet()
-
-						data_response = httpGet();
-						data_response.then(function (result) {
-							console.log(result);
-
-							intentResponse.queryResult.listCities = result;
-							itsThere = false;
-
-							res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
+								res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
+								console.log(res)
+								io.to(usr_socket).emit('res_chat', res);
+								//
+							}, function (err) {
+								console.log("err:", err);
+								//
+							});
+						} else {
+							itsThere = true;
+							console.log(itsThere)
+							console.log(queries)
+							intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+							res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title}
 							console.log(res)
 							io.to(usr_socket).emit('res_chat', res);
-							//
-						}, function (err) {
-							console.log("err:", err);
-							//
-						});
-
-						// console.log("prinitng the list");
-						// console.log(list)
+						}
 
 					}
 					else {
-						console.log()
-						itsThere = false
 
-						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
+						itsThere = false
+						intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title}
 						console.log(res)
 						io.to(usr_socket).emit('res_chat', res);
 					}
+
+
+
 
 					// console.log(intentResponse.queryResult)
 
