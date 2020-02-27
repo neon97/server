@@ -356,7 +356,7 @@ io.sockets.on('connection', function (socket) {
 				console.log("show location card")
 				return "others"
 			}
-			else if (findreturn(text, "date ") == "date ") {
+			else if (findreturn(text, "date") == "date") {
 				console.log("show calender for date")
 				return "calender"
 			}
@@ -372,7 +372,7 @@ io.sockets.on('connection', function (socket) {
 				console.log("show tab scroll text")
 				return "tab"
 			}
-			else if (findreturn(text, "changes?") == "changes?") {
+			else if (findreturn(text, "sure") == "sure") {
 				console.log("show options")
 				return "text"
 			} else if (findreturn(text, "Select any one from here!!") == "Select any one from here!!") {
