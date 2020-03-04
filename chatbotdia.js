@@ -55,6 +55,24 @@ const app = require('express')();
 app.use(compression())
 app.set('trust proxy', true);
 var itsThere = false;
+var countLimit = [
+	{
+		"room": "1",
+		"child": "3",
+		"adults": "9"
+	},
+	{
+		"room": "2",
+		"child": "3",
+		"adults": "9"
+	},
+	{
+		"room": "3",
+		"child": "3",
+		"adults": "9"
+	},
+
+]
 var changed = ""
 
 dp = http.createServer(app).listen(PORT_running, (error) => {
@@ -115,9 +133,7 @@ io.sockets.on('connection', function (socket) {
 				connectionsArray.splice(usr_socket, 1)
 			}
 			try {
-
 			} catch (err) {
-
 			}
 			socket.join(usr_socket);
 		}
@@ -147,10 +163,7 @@ io.sockets.on('connection', function (socket) {
 			}
 			socket.join(usr_socket);
 		}
-
-
-
-
+		
 		/// user register code
 		// Name, Email Id, Phone Number
 		// {"name":"", email_id:"", phone_number:""}
@@ -158,6 +171,7 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on('userchat', function (data) {
 		console.log("user has sended a querry")
+
 		u_id = data['id']
 		if (usr_socket != '') {
 			usr_socket = u_id
@@ -179,12 +193,9 @@ io.sockets.on('connection', function (socket) {
 			}
 			socket.join(usr_socket);
 		}
+
 		user_mesg = data['text'];
 		const queries = [user_mesg]
-
-
-
-
 
 		// Instantiates a session client
 		const sessionClient = new dialogflow.SessionsClient();
@@ -217,12 +228,11 @@ io.sockets.on('connection', function (socket) {
 			}
 
 			const responses = await sessionClient.detectIntent(request);
-			// responses[0].queryResult.fulfillmentText = "Tell what location that you are changing"
-			// console.log(responses[0].queryResult.parameters.fields.location);
 			return responses[0];
 		}
 
 		async function executeQueries(projectId, sessionId, queries, languageCode) {
+
 			// Keeping the context across queries let's us simulate an ongoing conversation with the bot
 			let context;
 			let intentResponse;
@@ -245,18 +255,39 @@ io.sockets.on('connection', function (socket) {
 					console.log(query);
 
 
-					// console.log(intentResponse.queryResult.parameters)
+					 //****** working on the logic to edit the parameter 
 
-					//removing need to add as testing for we dont have anuyhotels in this location
-					// itsThere == true ? intentResponse.queryResult.fulfillmentText = "Select any one from here!!" : console.log("")
+					//  if(String(query) == "Mumbai")
+					//  {
+					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue.fields.city.stringValue)
+					//  	intentResponse.queryResult.parameters.fields.location.structValue.fields.city.stringValue = "Dubai"
+					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue.fields.city.stringValue)
+					//  }else if(String(query) == "Dubai"){
+					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue.fields.city)
+					//  }else{
+					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue)
+
+					//  }
+
 					// intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+					// res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: countLimit }
+					// console.log(res)
+					
+					// io.to(usr_socket).emit('res_chat', res);
+
+					//		*******end of the logic//
 
 
+// ****************   Note upper one or lower one can be used alternaly vise-versa  ***************** //
+
+
+					// the main logic that works on the Android app *******
+							
 					if (findreturn(intentResponse.queryResult.fulfillmentText, "location") == "location") {
 						if (itsThere == true) {
 							data_response = httpGet();
 							data_response.then(function (result) {
-								console.log("this is the result"+String(result));
+								console.log("this is the result" + String(result));
 								if (String(result) == "") {
 									//querry will be checked with the list of cities if we dont hav the hotel in the city we will ask user to inout a new city
 									console.log("We dont have any hotels at this location !! Please Provide another location !!")
@@ -271,6 +302,9 @@ io.sockets.on('connection', function (socket) {
 
 								res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
 								console.log(res)
+
+console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+
 								io.to(usr_socket).emit('res_chat', res);
 								//
 							}, function (err) {
@@ -282,50 +316,49 @@ io.sockets.on('connection', function (socket) {
 							console.log(itsThere)
 							console.log(queries)
 							intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
-							res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title}
+							res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title }
 							console.log(res)
+
+console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+
 							io.to(usr_socket).emit('res_chat', res);
 						}
 
+					}
+
+					else if (findreturn(intentResponse.queryResult.fulfillmentText, "count") == "count") {
+						itsThere = false
+						intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+						console.log(countLimit)
+						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: countLimit }
+						console.log(res)
+
+console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+
+						io.to(usr_socket).emit('res_chat', res);
 					}
 					else {
 
 						itsThere = false
 						intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
-						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title}
+						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title }
 						console.log(res)
+
+console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+
 						io.to(usr_socket).emit('res_chat', res);
 					}
 
+					//				******* end of the logic that has been applied to the Flutter Android app easily
 
-
-
-					// console.log(intentResponse.queryResult)
-
-
-
-					// console.log(
-					// 	`Fulfillment Text: ${intentResponse.queryResult.fulfillmentText}`
-					// );
 					dd = intentResponse.outputAudio;
-					// console.log(intentResponse.responseId);
-					// console.log(intentResponse.queryResult.fulfillmentText);
-					// Use the context from this response for next queries
-					//base64output = intentResponse.outputAudio
-
-					//sending to the app almost
-
-
-
-
-
-
-
 				} catch (error) {
 					console.log(error);
 				}
 			}
 
+
+			// hitting the Api to verify the location
 
 			async function httpGet() {
 				return new Promise(function (resolve, reject) {
@@ -344,17 +377,15 @@ io.sockets.on('connection', function (socket) {
 			var list = ["raj"];
 			var link = "";
 
-
 		}
 
-
+		//function
 
 		executeQueries(projectId, sessionId, queries, languageCode);
 		console.log(itsThere)
 
 
-
-
+		//function for defining the action from node.js to the application
 
 		function runningCheck(text) {
 			if (findreturn(text, "location") == "location") {
@@ -393,9 +424,6 @@ io.sockets.on('connection', function (socket) {
 			}
 		}
 
-
-
-
 		function findreturn(text, find) {
 			finder = text.search(String(find))
 			if (String(finder) == "-1") {
@@ -404,15 +432,6 @@ io.sockets.on('connection', function (socket) {
 				return find;
 			}
 		}
-
-
-
-
-
-
-
-
-
 	})
 })
 
