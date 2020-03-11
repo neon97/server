@@ -2,12 +2,194 @@ PORT_running = 2024;
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
 
+
+//this is all about webhooks node js server for the chatbot is below the code
+"use strict";
+
+const express = require("express");
+const bodyParser = require("body-parser");
+
+const restService = express();
+
+restService.use(
+	bodyParser.urlencoded({
+		extended: true
+	})
+);
+
+restService.use(bodyParser.json());
+
+
+
+var list;
+var result;
+var place;
+var apicities;
+
+//api to check the locationn is available or not
+async function httpGet() {
+	return new Promise(function (resolve, reject) {
+		var jsonParsed;
+		const request = require('request');
+		console.log(place)
+		request('https://sandbox.app.repushti.com/search-city-country/' + place, function (error, response, body) {
+			console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+			jsonParsed = JSON.parse(body);
+			list = jsonParsed
+			resolve(list)
+		}
+		);
+	})
+}
+
+
+
+restService.post("/echo", function (req, res) {
+
+	var reponseSpeech;
+	console.log("webhooks")
+	console.log(req.body.queryResult.parameters.location);
+
+	var speechResponse = {
+		google: {
+			expectUserResponse: true,
+			richResponse: {
+				items: [
+					{
+						simpleResponse: {
+							textToSpeech: "Please provide another City name, as we don't have any service here!"
+						}
+					}
+				]
+			}
+		},
+	};
+
+	var showCity = [];
+	var messages = [
+		{
+			quickReplies: {
+				title: 'Select any one City that you prefer to stay at !',
+				quickReplies: showCity,
+			}
+
+			// card: {
+			// 	title: "card title",
+			// 	subtitle: "card text",
+			// 	imageUri: "https://cdn.britannica.com/26/84526-050-45452C37/Gateway-monument-India-entrance-Mumbai-Harbour-coast.jpg",
+			// 	buttons: [
+			// 		{
+			// 			text: "button text",
+			// 			postback: "https://example.com/path/for/end-user/to/follow"
+			// 		}
+			// 	]
+			// }
+		}
+	]
+
+
+
+	/// two different ternary operation object /////
+
+	var speech =
+		req.body.queryResult &&
+			req.body.queryResult.parameters &&
+			req.body.queryResult.parameters.echoText
+			? req.body.queryResult.parameters.echoText
+			: "Please provide another City name, as we don't have any service here!";
+
+
+	var foundResponse = {
+		payload: speechResponse,
+		fulfillmentText: speech,
+		speech: speech,
+		displayText: speech,
+		source: "webhook-echo-sample"
+	}
+	var foundObjectResponse = {
+		//payload has been absent for testing and developent purpose
+		fulfillmentText: "Select any one City from below: ",
+		fulfillmentMessages: messages,
+		speech: "Select any one City from below: ",
+		displayText: "Select any one City from below: ",
+		source: "webhook-echo-sample"
+	}
+
+
+
+
+	var notFound = { "Text": "helloworld" }
+
+	///****end of the operations */
+
+
+	//login behind to control the location flow//
+
+	if (String(req.body.queryResult.parameters.location.city) == "undefined") {
+		console.log(speech);
+		result = notFound
+		console.log("city absent")
+		return res.json(result);
+
+	} else if (String(req.body.queryResult.parameters.location.city) == "") {
+		console.log(speech);
+		result = foundResponse
+		console.log(foundResponse)
+		return res.json(result);
+	}
+	else {
+		console.log("City present verification process initialized")
+		console.log(speech);
+		place = req.body.queryResult.parameters.location.city;
+		data_response = httpGet();
+		data_response.then(function (reponse) {
+			// console.log("this is the result" + String(reponse));
+			if (String(reponse) == "") {
+				result = foundResponse
+				return res.json(result);
+			} else {
+				if (req.body.queryResult.parameters.location.country == "") {
+					console.log("the country is empty we are providing cities wth country")
+					console.log(reponse)
+					//providing cityList through the API reponse
+					for (i = 0; i < list.length; i++) {
+						showCity.unshift(String(list[i].City_Name + " " + list[i].Country_Name))
+					}
+					result = foundObjectResponse
+					return res.json(result);
+				}
+				console.log("the list is printed from the list datatype")
+				console.log(reponse)
+				// foundResponse.payload.google.richResponse.items[0].citiesList = list
+				// console.log(foundResponse.payload.google.richResponse.items[0].citiesList)
+				result = notFound
+				return res.json(result);
+			}
+		});
+
+	}
+
+	///****end of the logic */
+
+});
+
+
+
+restService.listen(process.env.PORT || 8000, function () {
+	console.log("Server up and listening to 8000 port");
+});
+
+
+//code for node.js server
+
+
+
 /*
 env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\Qtech\Documents\JS server Socket\key.json"
-
+	
 set GOOGLE_APPLICATION_CREDENTIALS="C:\Users\Qtech\Documents\JS server Socket\key.json"
-
-
+	
+	
 C:\Program Files (x86)\Common Files\Oracle\Java\javapath;
 C:\ProgramData\Oracle\Java\javapath;%SystemRoot%\system32;
 %SystemRoot%;%SystemRoot%\System32\Wbem;
@@ -55,6 +237,7 @@ const app = require('express')();
 app.use(compression())
 app.set('trust proxy', true);
 var itsThere = false;
+var lister;
 var countLimit = [
 	{
 		"room": "1",
@@ -163,7 +346,7 @@ io.sockets.on('connection', function (socket) {
 			}
 			socket.join(usr_socket);
 		}
-		
+
 		/// user register code
 		// Name, Email Id, Phone Number
 		// {"name":"", email_id:"", phone_number:""}
@@ -241,8 +424,8 @@ io.sockets.on('connection', function (socket) {
 					console.log("printing its there")
 					console.log(itsThere)
 					console.log(`Sending Query: ${query}`);
-					link = 'https://sandbox.app.repushti.com/search-city-country/' + String(query)
-					console.log(link)
+
+
 					// itsThere == true ? changed = "Select any one location from here!!" : console.log("")
 					intentResponse = await detectIntent(
 						projectId,
@@ -254,8 +437,27 @@ io.sockets.on('connection', function (socket) {
 					console.log("prinitng the query")
 					console.log(query);
 
+					// //************this is the logic where no manipulation is made to the dialogflow */
 
-					 //****** working on the logic to edit the parameter 
+
+					intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+					//working on to get the api reponse cities to the dynamic application reponse;
+					//intentResponse.queryResult.listCities = apicities;
+					console.log(intentResponse.queryResult.fulfillmentMessages[0].quickReplies)
+					if (String(intentResponse.queryResult.fulfillmentMessages[0].quickReplies) == "undefined") {
+						lister = countLimit
+					} else {
+						lister = intentResponse.queryResult.fulfillmentMessages[0].quickReplies.quickReplies
+					}
+
+					res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: lister, }
+					console.log(res)
+					io.to(usr_socket).emit('res_chat', res);
+
+					//end of the logic
+
+
+					//****** working on the logic to edit the parameter 
 
 					//  if(String(query) == "Mumbai")
 					//  {
@@ -272,82 +474,98 @@ io.sockets.on('connection', function (socket) {
 					// intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
 					// res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: countLimit }
 					// console.log(res)
-					
+
 					// io.to(usr_socket).emit('res_chat', res);
 
 					//		*******end of the logic//
 
 
-// ****************   Note upper one or lower one can be used alternaly vise-versa  ***************** //
+					// ****************   Note upper one or lower one can be used alternaly vise-versa  ***************** //
 
 
 					// the main logic that works on the Android app *******
-							
-					if (findreturn(intentResponse.queryResult.fulfillmentText, "location") == "location") {
-						if (itsThere == true) {
-							data_response = httpGet();
-							data_response.then(function (result) {
-								console.log("this is the result" + String(result));
-								if (String(result) == "") {
-									//querry will be checked with the list of cities if we dont hav the hotel in the city we will ask user to inout a new city
-									console.log("We dont have any hotels at this location !! Please Provide another location !!")
-									intentResponse.queryResult.fulfillmentText = "We dont have any hotels at this location !! Please Provide another location !!"
-								} else {
-									//we have the hotel in the city and we will just confirm the localtion properly as we can have same name of cities worldwide
-									intentResponse.queryResult.fulfillmentText = "Select any one from here!!"
-									intentResponse.queryResult.listCities = result;
-									itsThere = false;
-								}
-								intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
 
-								res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
-								console.log(res)
+					// 		if (findreturn(intentResponse.queryResult.fulfillmentText, "finding") == "finding") {
+					// 			if (itsThere == true) {
+					// 				data_response = httpGet();
+					// 				data_response.then(function (result) {
 
-console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+					// 					if (String(result) == "") {
+					// 						//querry will be checked with the list of cities if we dont hav the hotel in the city we will ask user to inout a new city
+					// 						console.log("We dont have any hotels at this location !! Please Provide another location !!")
+					// 						intentResponse.queryResult.fulfillmentText = "We dont have any hotels at this location !! Please Provide another location !!"
+					// 					} else {
+					// 						//we have the hotel in the city and we will just confirm the localtion properly as we can have same name of cities worldwide
+					// 						intentResponse.queryResult.fulfillmentText = "Select any one from here!!"
+					// 						intentResponse.queryResult.listCities = result;
+					// 						itsThere = false;
+					// 					}
+					// 					intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
 
-								io.to(usr_socket).emit('res_chat', res);
-								//
-							}, function (err) {
-								console.log("err:", err);
-								//
-							});
-						} else {
-							itsThere = true;
-							console.log(itsThere)
-							console.log(queries)
-							intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
-							res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title }
-							console.log(res)
+					// 					res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: intentResponse.queryResult.listCities }
+					// 					console.log(res)
 
-console.log(intentResponse.queryResult.parameters.fields)		//using for debug
 
-							io.to(usr_socket).emit('res_chat', res);
-						}
 
-					}
 
-					else if (findreturn(intentResponse.queryResult.fulfillmentText, "count") == "count") {
-						itsThere = false
-						intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
-						console.log(countLimit)
-						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: countLimit }
-						console.log(res)
+					// 					io.to(usr_socket).emit('res_chat', res);
+					// 					//
+					// 				}, function (err) {
+					// 					console.log("err:", err);
+					// 					//
+					// 				});
+					// 			} else {
+					// 				itsThere = true;
+					// 				console.log(itsThere)
+					// 				console.log(queries)
+					// 				intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+					// 				res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title }
+					// 				console.log(res)
 
-console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+					// 				//using for debug
+					// 				// console.log("The location output is here")
 
-						io.to(usr_socket).emit('res_chat', res);
-					}
-					else {
+					// 				// String(intentResponse.queryResult.parameters.fields.location.stringValue) == "[object Object]" ?
+					// 				// 	console.log(intentResponse.queryResult.parameters.fields.location.stringValue) :
+					// 				// 	console.log(intentResponse.queryResult.parameters.fields.location.structValue)
 
-						itsThere = false
-						intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
-						res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title }
-						console.log(res)
+					// 				io.to(usr_socket).emit('res_chat', res);
+					// 			}
 
-console.log(intentResponse.queryResult.parameters.fields)		//using for debug
+					// 		}
 
-						io.to(usr_socket).emit('res_chat', res);
-					}
+					// 		else if (findreturn(intentResponse.queryResult.fulfillmentText, "count") == "count") {
+					// 			itsThere = false
+					// 			intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+					// 			console.log(countLimit)
+					// 			res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: countLimit }
+					// 			console.log(res)
+
+					// 			//using for debug
+					// 			// console.log("The location output is here")
+
+					// 			// String(intentResponse.queryResult.parameters.fields.location.stringValue) == "[object Object]" ?
+					// 			// 	console.log(intentResponse.queryResult.parameters.fields.location.stringValue) :
+					// 			// 	console.log(intentResponse.queryResult.parameters.fields.location.structValue)
+
+					// 			io.to(usr_socket).emit('res_chat', res);
+					// 		}
+					// 		else {
+
+					// 			itsThere = false
+					// 			intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
+					// 			res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title }
+					// 			console.log(res)		
+
+					// 			//using for debug
+					// 			// console.log("The location output is here")
+
+					// 			// String(intentResponse.queryResult.parameters.fields.location.stringValue) == "[object Object]" ?
+					// 			// 	console.log(intentResponse.queryResult.parameters.fields.location.stringValue) :
+					// 			// 	console.log(intentResponse.queryResult.parameters.fields.location.structValue)
+
+					// 			io.to(usr_socket).emit('res_chat', res);									
+					// 		}
 
 					//				******* end of the logic that has been applied to the Flutter Android app easily
 
@@ -356,27 +574,6 @@ console.log(intentResponse.queryResult.parameters.fields)		//using for debug
 					console.log(error);
 				}
 			}
-
-
-			// hitting the Api to verify the location
-
-			async function httpGet() {
-				return new Promise(function (resolve, reject) {
-					var jsonParsed;
-					const request = require('request');
-					request(link, function (error, response, body) {
-						console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-						jsonParsed = JSON.parse(body);
-						list = jsonParsed
-						resolve(list)
-					}
-					);
-				})
-			}
-
-			var list = ["raj"];
-			var link = "";
-
 		}
 
 		//function
@@ -388,7 +585,7 @@ console.log(intentResponse.queryResult.parameters.fields)		//using for debug
 		//function for defining the action from node.js to the application
 
 		function runningCheck(text) {
-			if (findreturn(text, "location") == "location") {
+			if (findreturn(text, "location") == "location" ) {
 
 				console.log("show location card")
 				return "others"
@@ -412,7 +609,7 @@ console.log(intentResponse.queryResult.parameters.fields)		//using for debug
 			else if (findreturn(text, "sure") == "sure") {
 				console.log("show options")
 				return "text"
-			} else if (findreturn(text, "Select any one from here!!") == "Select any one from here!!") {
+			} else if (findreturn(text, "Select any") == "Select any") {
 
 				return "tabCity"
 			} else if (findreturn(text, "Congrats") == "Congrats") {
@@ -434,5 +631,4 @@ console.log(intentResponse.queryResult.parameters.fields)		//using for debug
 		}
 	})
 })
-
 
