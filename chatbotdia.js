@@ -291,6 +291,7 @@ io.sockets.on('connection', function (socket) {
 
 	//console.log(socket);
 	var clientIp = socket.request.connection.remoteAddress;
+	socket.handshake.sessionID = socket.handshake.headers.auth
 	var uniqe_clientid = socket.handshake.sessionID;
 	//console.log(socket.handshake);
 
@@ -585,12 +586,12 @@ io.sockets.on('connection', function (socket) {
 		//function for defining the action from node.js to the application
 
 		function runningCheck(text) {
-			if (findreturn(text, "location") == "location" ) {
+			if (findreturn(text, "location") == "location") {
 
 				console.log("show location card")
 				return "others"
 			}
-			else if (findreturn(text, "date") == "date") {
+			else if (findreturn(text, "travel") == "travel") {
 				console.log("show calender for date")
 				return "calender"
 			}
@@ -598,15 +599,11 @@ io.sockets.on('connection', function (socket) {
 				console.log("show count scroll")
 				return "count"
 			}
-			else if (findreturn(text, "rating ") == "rating ") {
-				console.log("show rating stars")
-				return "rating"
-			}
 			else if (findreturn(text, "facilities ") == "facilities ") {
 				console.log("show tab scroll text")
 				return "tab"
 			}
-			else if (findreturn(text, "sure") == "sure") {
+			else if (findreturn(text, "You are looking") == "You are looking") {
 				console.log("show options")
 				return "text"
 			} else if (findreturn(text, "Select any") == "Select any") {
@@ -615,6 +612,10 @@ io.sockets.on('connection', function (socket) {
 			} else if (findreturn(text, "Congrats") == "Congrats") {
 
 				return "video"
+			}
+			else if (findreturn(text, "Star ") == "Star ") {
+				console.log("show rating stars")
+				return "rating"
 			}
 			else {
 				console.log("flow")
