@@ -209,11 +209,9 @@ const projectId = 'repushti-d04b3';
 
 // sesion id with random no generation is to be handled...
 
-r = Math.random(100000000, 11100000000)
-d = r * 10000
-sessionnum = Math.floor(d)
 
-const sessionId = "RAJ" + sessionnum;
+
+
 // queries: A set of sequential queries to be send to Dialogflow agent for Intent Detection
 
 
@@ -291,7 +289,13 @@ io.sockets.on('connection', function (socket) {
 
 	//console.log(socket);
 	var clientIp = socket.request.connection.remoteAddress;
-	socket.handshake.sessionID = socket.handshake.headers.auth
+	r = Math.random(100000000, 11100000000)
+	d = r * 10000
+	sessionnum = Math.floor(d)
+
+	const sessionId = String(socket.handshake.headers.auth + "000" + sessionnum)
+	console.log("session id: " + sessionId);
+	socket.handshake.sessionID = sessionId
 	var uniqe_clientid = socket.handshake.sessionID;
 	//console.log(socket.handshake);
 
@@ -325,13 +329,11 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('registeruser', function (data) {
-		// console.log(data);
-		u_id = data['id']
-		if (usr_socket != '') {
-			usr_socket = u_id
-		} else {
-			usr_socket = uniqe_clientid
-		}
+
+
+		usr_socket = uniqe_clientid
+
+		console.log("user registered with sessionId: " + usr_socket)
 
 		socket.join(usr_socket);
 		if (usr_socket != null && usr_socket != '') {
@@ -354,14 +356,12 @@ io.sockets.on('connection', function (socket) {
 	})
 
 	socket.on('userchat', function (data) {
-		console.log("user has sended a querry")
 
-		u_id = data['id']
-		if (usr_socket != '') {
-			usr_socket = u_id
-		} else {
-			usr_socket = uniqe_clientid
-		}
+
+
+		usr_socket = uniqe_clientid
+
+		console.log("user has sended a querry with session id: " + usr_socket)
 
 		socket.join(usr_socket);
 		if (usr_socket != null && usr_socket != '') {
@@ -443,8 +443,7 @@ io.sockets.on('connection', function (socket) {
 
 					intentResponse.queryResult.title = String(runningCheck(String(intentResponse.queryResult.fulfillmentText)))
 					//working on to get the api reponse cities to the dynamic application reponse;
-					//intentResponse.queryResult.listCities = apicities;
-					console.log(intentResponse.queryResult.fulfillmentMessages[0].quickReplies)
+
 					if (String(intentResponse.queryResult.fulfillmentMessages[0].quickReplies) == "undefined") {
 						lister = countLimit
 					} else {
@@ -452,7 +451,9 @@ io.sockets.on('connection', function (socket) {
 					}
 
 					res = { text: intentResponse.queryResult.fulfillmentText, show: intentResponse.queryResult.title, list: lister, }
+					console.log("emiting to sessionId: " + usr_socket)
 					console.log(res)
+
 					io.to(usr_socket).emit('res_chat', res);
 
 					//end of the logic
@@ -465,7 +466,7 @@ io.sockets.on('connection', function (socket) {
 					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue.fields.city.stringValue)
 					//  	intentResponse.queryResult.parameters.fields.location.structValue.fields.city.stringValue = "Dubai"
 					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue.fields.city.stringValue)
-					//  }else if(String(query) == "Dubai"){
+					//  }els0 e if(String(query) == "Dubai"){
 					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue.fields.city)
 					//  }else{
 					//  	console.log(intentResponse.queryResult.parameters.fields.location.structValue)
@@ -591,7 +592,10 @@ io.sockets.on('connection', function (socket) {
 				console.log("show location card")
 				return "others"
 			}
-			else if (findreturn(text, "travel") == "travel") {
+			else if (findreturn(text, "When do you want to travel?") == "When do you want to travel?") {
+				console.log("show calender for date")
+				return "calender"
+			} else if (findreturn(text, "Help us, With your date of travel.") == "Help us, With your date of travel.") {
 				console.log("show calender for date")
 				return "calender"
 			}
