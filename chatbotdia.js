@@ -1,7 +1,10 @@
 PORT_running = 2024;
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
+var ip = require("ip");
+console.dir ( ip.address() );
 
+// npm install uuid express body-parser request execa
 
 //this is all about webhooks node js server for the chatbot is below the code
 "use strict";
